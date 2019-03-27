@@ -34,6 +34,7 @@ RUN yum makecache fast \
       less \
       curl \
       unzip \
+      openssh-clients \
       python-pip
 
 # Google Cloud SDK repo
