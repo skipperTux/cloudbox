@@ -49,6 +49,7 @@ fi
 # Run cloud-bastion container
 docker run \
     -it \
+    --mount type=bind,source="/sys/fs/cgroup",target="/sys/fs/cgroup",readonly \
     --mount type=bind,source="${LOCAL_WORKDIR}",target="${CLOUD_BASTION_WORKDIR}" \
-    --mount type=bind,source="${LOCAL_SSH}",target="${CLOUD_BASTION_SSH}" \
+    --mount type=bind,source="${LOCAL_SSH}",target="${CLOUD_BASTION_SSH}",readonly \
     local/cloud-bastion /bin/bash

@@ -95,9 +95,8 @@ RUN yum clean all
 # Disable requiretty.
 RUN sed -i -e 's/^\(Defaults\s*requiretty\)/#--- \1/' /etc/sudoers
 
-# Switch to non-root user and workdir
+# Switch to non-root user, add .local/bin path and switch to workdir
 USER ${docker_user}
-# Add ,local/bin path
 RUN echo -e '\n# User specific environment and startup programs\n\
 PATH=$PATH:$HOME/.local/bin:$HOME/bin'\
   >> ~/.bashrc
