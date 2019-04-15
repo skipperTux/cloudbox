@@ -22,6 +22,10 @@ while [[ $# -gt 0 ]]; do
         -b|--build)
         build=true
         ;;
+        # This is a flag type option. Will catch either -f or --force
+        -f|--force)
+        force=true
+        ;;
         *)
         # Do whatever you want with extra options
         echo "Unknown option '$key'"
@@ -36,13 +40,15 @@ if ! systemctl is-active --quiet docker; then
 fi
 
 # Build cloud-bastion image
-if [ "$build" = true ] ; then
+if [ "$build" = "true" ]; then
     pushd `dirname "$(readlink -f "$0")"`
+    args=('--rm'
+        "--build-arg=\"CLOUD_BASTION_USER=${CLOUD_BASTION_USER}\""
+        "--build-arg=\"CLOUD_BASTION_WORKDIR=${CLOUD_BASTION_WORKDIR}\"")
+    [ "$force" = "true" ] && args+=('--no-cache')
     docker build \
-        --rm \
-        --build-arg CLOUD_BASTION_USER=${CLOUD_BASTION_USER} \
-        --build-arg CLOUD_BASTION_WORKDIR=${CLOUD_BASTION_WORKDIR} \
-        -t local/cloud-bastion .
+        "${args[@]}" \
+        --tag='local/cloud-bastion' .
     popd
 fi
 
