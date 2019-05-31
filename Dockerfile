@@ -5,7 +5,7 @@ ARG CLOUD_BASTION_USER=bastion
 ARG CLOUD_BASTION_WORKDIR=/home/${CLOUD_BASTION_USER}/Projects
 
 ENV root_user root
-ENV terraform_version 0.11.13
+ENV terraform_version 0.12.0
 ENV terraform terraform_${terraform_version}_linux_amd64.zip
 ENV terraform_bin_path /opt/terraform
 ENV pip_packages="ansible awscli pypsexec pywinrm pywinrm[credssp]"
