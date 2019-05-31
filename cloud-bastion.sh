@@ -53,9 +53,15 @@ if [ "$build" = "true" ]; then
 fi
 
 # Run cloud-bastion container
-docker run \
-    -it \
-    --mount type=bind,source="/sys/fs/cgroup",target="/sys/fs/cgroup",readonly \
-    --mount type=bind,source="${LOCAL_WORKDIR}",target="${CLOUD_BASTION_WORKDIR}" \
-    --mount type=bind,source="${LOCAL_SSH}",target="${CLOUD_BASTION_SSH}",readonly \
+unset args
+args=('-it'
+    "--mount type=bind,source='/sys/fs/cgroup',target='/sys/fs/cgroup',readonly"
+    "--mount type=bind,source=\"${LOCAL_WORKDIR}\",target=\"${CLOUD_BASTION_WORKDIR}\""
+    "--mount type=bind,source=\"${LOCAL_SSH}\",target=\"${CLOUD_BASTION_SSH}\",readonly")
+if [ "${PWD:0:${#LOCAL_WORKDIR}}" = $LOCAL_WORKDIR ]; then
+    subfolder=${PWD#${LOCAL_WORKDIR}/}
+    args+=("--workdir \"${CLOUD_BASTION_WORKDIR}/${subfolder}\"")
+fi
+eval docker run \
+    "${args[@]}" \
     local/cloud-bastion /bin/bash
