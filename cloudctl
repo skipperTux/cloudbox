@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+if [ ${UID} -ne 0 ]; then
+    echo "use: sudo ${0##*/}"
+    exit -1
+fi
+
+set -o errexit
+set -o nounset
+# set -o xtrace
+
+# Set magic variables for current file & dir
+__dir=`dirname "$(readlink -f "$0")"`
+__file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+__base="$(basename ${__file} .sh)"
+__bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Set variables
+export CLOUDCTL_USER='bastion'
+export CLOUDCTL_SSH="/home/${CLOUDCTL_USER}/.ssh"
+export CLOUDCTL_WORKDIR="/home/${CLOUDCTL_USER}/Projects"
+LOCAL_HOME="$(getent passwd ${SUDO_USER} | cut -d: -f6)"
+LOCAL_WORKDIR="${LOCAL_HOME}/Projects"
+LOCAL_SSH="${LOCAL_WORKDIR}/ssh"
+
+CLOUDCTL_NAME='cloudctl_exec'
+
+build=false
+force=false
+exec=false
+unset start
+
+# Start Docker service, if not running (systemd)
+if ! systemctl is-active --quiet docker; then
+    systemctl start --quiet docker
+fi
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "${key}" in
+        # This is a flag type option. Will catch either -b or --build
+        -b|--build)
+        build=true
+        ;;
+        # This is a flag type option. Will catch either -f or --force
+        -f|--force)
+        force=true
+        ;;
+        # This is an arg value type option. Will catch -e value or --exec value
+        -e|--exec)
+        exec=true
+        shift # past the key and to the value
+        command="$1"
+        ;;
+        # This is an arg=value type option. Will catch -e=value or --exec=value
+        -e=*|--exec=*)
+        # No need to shift here since the value is part of the same string
+        exec=true
+        command="${key#*=}"
+        ;;
+        # This is a flag type option. Will catch either -e or --exec
+        -e|--exec)
+        ;;
+        *)
+        # Do whatever you want with extra options
+        echo "Unknown option '${key}'"
+        ;;
+    esac
+    shift
+done
+
+if [ "${exec:-}" = "true" ]; then
+    if docker exec ${CLOUDCTL_NAME} true 2>/dev/null; then
+        start=false
+    else
+        start=true
+    fi
+fi
+
+# functions
+
+local_workdirs () {
+    # Create local working directories
+    sudo -H -u ${SUDO_USER} mkdir -p ${LOCAL_WORKDIR}
+    sudo -H -u ${SUDO_USER} mkdir -p ${LOCAL_SSH}
+}
+
+container_build () {
+    # Build cloud-bastion image
+    local args
+    pushd ${__dir}
+    args=('--rm=true'
+        "--build-arg=\"CLOUDCTL_USER=${CLOUDCTL_USER}\""
+        "--build-arg=\"CLOUDCTL_WORKDIR=${CLOUDCTL_WORKDIR}\"")
+    [ "${force:-}" = "true" ] && args+=('--no-cache')
+    args+=("--tag='local/cloud-bastion'" '.')
+    docker build ${args[@]}
+    popd
+}
+
+container_run () {
+    # Run cloud-bastion container
+    local args
+    if [ "${exec:-}" = "true" ]; then
+        args=('--detach')
+    else
+        args=('--interactive' '--tty')
+    fi
+
+    args+=("--mount type=bind,source='/sys/fs/cgroup',target='/sys/fs/cgroup',readonly"
+        "--mount type=bind,source=\"${LOCAL_WORKDIR}\",target=\"${CLOUDCTL_WORKDIR}\""
+        "--mount type=bind,source=\"${LOCAL_SSH}\",target=\"${CLOUDCTL_SSH}\",readonly")
+
+    if [ "${PWD:0:${#LOCAL_WORKDIR}}" = $LOCAL_WORKDIR ]; then
+        subfolder=${PWD#${LOCAL_WORKDIR}/}
+        args+=("--workdir \"${CLOUDCTL_WORKDIR}/${subfolder}\"")
+    fi
+
+    if [ "${exec:-}" = "true" ]; then
+        args+=("--name ${CLOUDCTL_NAME}")
+        args+=('local/cloud-bastion' 'tail -f /dev/null')
+    else
+        args+=('local/cloud-bastion' '/bin/bash')
+    fi
+
+    docker run ${args[@]}
+}
+
+container_exec () {
+    local args
+    args=('--interactive' '--tty')
+    args+=("${CLOUDCTL_NAME}" "${command}")
+
+    docker exec ${args[@]}
+}
+
+# main script
+if [ "${start:-}" != "false" ]; then
+    local_workdirs
+fi
+
+if [ "${build:-}" = "true" ]; then
+    container_build
+fi
+
+if [ "${start:-}" = "true" ] || [ "${exec:-}" = "false" ]; then
+    container_run
+fi
+
+if [ "${exec:-}" = "true" ]; then
+    container_exec
+fi

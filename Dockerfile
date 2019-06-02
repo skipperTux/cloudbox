@@ -1,16 +1,16 @@
 FROM centos:7
 LABEL maintainer "skipperTux"
 
-ARG CLOUD_BASTION_USER=bastion
-ARG CLOUD_BASTION_WORKDIR=/home/${CLOUD_BASTION_USER}/Projects
+ARG CLOUDCTL_USER=bastion
+ARG CLOUDCTL_WORKDIR=/home/${CLOUDCTL_USER}/Projects
 
 ENV root_user root
 ENV terraform_version 0.12.0
 ENV terraform terraform_${terraform_version}_linux_amd64.zip
 ENV terraform_bin_path /opt/terraform
 ENV pip_packages="ansible awscli pypsexec pywinrm pywinrm[credssp]"
-ENV docker_user ${CLOUD_BASTION_USER}
-ENV projects ${CLOUD_BASTION_WORKDIR}
+ENV docker_user ${CLOUDCTL_USER}
+ENV projects ${CLOUDCTL_WORKDIR}
 
 USER ${root_user}
 # Install systemd -- See https://hub.docker.com/_/centos
