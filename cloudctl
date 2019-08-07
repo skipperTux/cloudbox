@@ -90,7 +90,8 @@ container_build () {
     pushd ${__dir}
     args=('--rm=true'
         "--build-arg=\"CLOUDCTL_USER=${CLOUDCTL_USER}\""
-        "--build-arg=\"CLOUDCTL_WORKDIR=${CLOUDCTL_WORKDIR}\"")
+        "--build-arg=\"CLOUDCTL_WORKDIR=${CLOUDCTL_WORKDIR}\""
+        "--build-arg=\"BUILD_DATE=$(date --utc +\"%FT%TZ\")\"")
     [ "${force:-}" = "true" ] && args+=('--no-cache')
     args+=("--tag='local/cloud-bastion'" '.')
     eval docker build ${args[@]}

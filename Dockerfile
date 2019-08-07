@@ -1,5 +1,5 @@
 FROM centos:7
-LABEL maintainer "skipperTux"
+LABEL maintainer="skipperTux"
 
 ARG ROOT_USER=root
 ARG CLOUDCTL_USER=bastion
@@ -11,6 +11,15 @@ ARG TERRAFORM_URI=terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 ARG TERRAFORM_URL=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_URI}
 ARG TERRAFORM_BIN_PATH=/opt/terraform
 ARG PIP_PACKAGES="ansible awscli pypsexec pywinrm pywinrm[credssp]"
+ARG BUILD_DATE
+
+# Labels -- See https://github.com/opencontainers/image-spec/blob/master/annotations.md
+LABEL org.opencontainers.image.created=${BUILD_DATE}
+LABEL org.opencontainers.image.url="https://github.com/skipperTux/cloud-bastion"
+LABEL org.opencontainers.image.vendor="roeper.biz"
+LABEL org.opencontainers.image.licenses="BSD-3-Clause"
+LABEL org.opencontainers.image.title="cloud-bastion"
+LABEL org.opencontainers.image.description="Tooling for Terraform, Ansible, Kubernetes, AWS, Azure and Google Cloud in a Docker container."
 
 USER ${ROOT_USER}
 # Install systemd -- See https://hub.docker.com/_/centos
