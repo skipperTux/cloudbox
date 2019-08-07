@@ -35,7 +35,10 @@ RUN yum makecache fast \
       curl \
       unzip \
       openssh-clients \
-      python-pip
+      python36
+
+# Install pip3
+RUN python3 -m ensurepip
 
 # Google Cloud SDK repo
 RUN echo -e '[google-cloud-sdk]\n\
@@ -83,7 +86,7 @@ RUN useradd -m -s /bin/bash -U ${docker_user}
 
 USER ${docker_user}
 # Install pip packages (Ansible, AWS CLI)
-RUN pip install --upgrade --user ${pip_packages}
+RUN pip3 install --upgrade --user ${pip_packages}
 
 # Add mount volume
 RUN mkdir -p ${projects}
