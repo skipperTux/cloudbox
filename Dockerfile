@@ -5,7 +5,7 @@ ARG CLOUDCTL_USER=bastion
 ARG CLOUDCTL_WORKDIR=/home/${CLOUDCTL_USER}/Projects
 
 ENV root_user root
-ENV terraform_version 0.12.0
+ENV terraform_version 0.12.6
 ENV terraform terraform_${terraform_version}_linux_amd64.zip
 ENV terraform_bin_path /opt/terraform
 ENV pip_packages="ansible awscli pypsexec pywinrm pywinrm[credssp]"
