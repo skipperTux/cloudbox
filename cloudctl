@@ -93,7 +93,7 @@ container_build () {
         "--build-arg=\"CLOUDCTL_WORKDIR=${CLOUDCTL_WORKDIR}\"")
     [ "${force:-}" = "true" ] && args+=('--no-cache')
     args+=("--tag='local/cloud-bastion'" '.')
-    docker build ${args[@]}
+    eval docker build ${args[@]}
     popd
 }
 
@@ -122,7 +122,7 @@ container_run () {
         args+=('local/cloud-bastion' '/bin/bash')
     fi
 
-    docker run ${args[@]}
+    eval docker run ${args[@]}
 }
 
 container_exec () {
@@ -130,7 +130,7 @@ container_exec () {
     args=('--interactive' '--tty')
     args+=("${CLOUDCTL_NAME}" "${command}")
 
-    docker exec ${args[@]}
+    eval docker exec ${args[@]}
 }
 
 # main script
