@@ -14,7 +14,7 @@ ARG TERRAFORM_VERSION=0.12.6
 ARG TERRAFORM_URI=terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 ARG TERRAFORM_URL=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_URI}
 ARG TERRAFORM_BIN_PATH=/opt/terraform
-ARG PIP_PACKAGES="ansible awscli pypsexec pywinrm pywinrm[credssp]"
+ARG PIP_PACKAGES="ansible awscli lxml netaddr pypsexec pywinrm pywinrm[credssp]"
 ARG BUILD_DATE
 
 # Labels -- See https://github.com/opencontainers/image-spec/blob/master/annotations.md
