@@ -4,6 +4,10 @@ LABEL maintainer="skipperTux"
 ARG ROOT_USER=root
 ARG CLOUDCTL_USER=bastion
 ARG DOCKER_USER=${CLOUDCTL_USER}
+ARG CLOUDCTL_SSH=/home/${CLOUDCTL_USER}/.ssh
+ARG CLOUDCTL_HOST_SSH=/home/${CLOUDCTL_USER}/host_ssh
+ARG SSH=${CLOUDCTL_SSH}
+ARG HOST_SSH=${CLOUDCTL_HOST_SSH}
 ARG CLOUDCTL_WORKDIR=/home/${CLOUDCTL_USER}/Projects
 ARG PROJECTS=${CLOUDCTL_WORKDIR}
 ARG TERRAFORM_VERSION=0.12.6
@@ -96,6 +100,10 @@ RUN useradd -m -s /bin/bash -U ${DOCKER_USER}
 USER ${DOCKER_USER}
 # Install pip packages (Ansible, AWS CLI)
 RUN pip3 install --upgrade --user ${PIP_PACKAGES}
+
+# Add .ssh from host
+RUN mkdir -p ${HOST_SSH} \
+  && ln -s ${HOST_SSH} ${SSH}
 
 # Add mount volume
 RUN mkdir -p ${PROJECTS}
