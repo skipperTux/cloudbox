@@ -23,7 +23,7 @@ LOCAL_HOME="$(getent passwd ${SUDO_USER} | cut -d: -f6)"
 LOCAL_SSH="${LOCAL_HOME}/.ssh"
 LOCAL_WORKDIR="${LOCAL_HOME}/Projects"
 
-CLOUDCTL_NAME='cloudctl_exec'
+CLOUDCTL_NAME='cloudctl'
 
 build=false
 force=false

@@ -23,7 +23,7 @@ LABEL org.opencontainers.image.url="https://github.com/skipperTux/cloud-bastion"
 LABEL org.opencontainers.image.vendor="roeper.biz"
 LABEL org.opencontainers.image.licenses="BSD-3-Clause"
 LABEL org.opencontainers.image.title="cloud-bastion"
-LABEL org.opencontainers.image.description="Tooling for Terraform, Ansible, Kubernetes, AWS, Azure and Google Cloud in a Docker container."
+LABEL org.opencontainers.image.description="Tooling for Terraform, Ansible, Kubernetes, AWS, Azure and Google Cloud in a CentOS 7 based Docker image."
 
 USER ${ROOT_USER}
 # Install systemd -- See https://hub.docker.com/_/centos
