@@ -1,18 +1,32 @@
 FROM centos:7
-LABEL maintainer "skipperTux"
+LABEL maintainer="skipperTux"
 
-ARG CLOUD_BASTION_USER=bastion
-ARG CLOUD_BASTION_WORKDIR=/home/${CLOUD_BASTION_USER}/Projects
+ARG ROOT_USER=root
+ARG CLOUDCTL_USER=bastion
+ARG DOCKER_USER=${CLOUDCTL_USER}
+ARG CLOUDCTL_SSH=/home/${CLOUDCTL_USER}/.ssh
+ARG CLOUDCTL_HOST_SSH=/home/${CLOUDCTL_USER}/host_ssh
+ARG SSH=${CLOUDCTL_SSH}
+ARG HOST_SSH=${CLOUDCTL_HOST_SSH}
+ARG CLOUDCTL_WORKDIR=/home/${CLOUDCTL_USER}/Projects
+ARG PROJECTS=${CLOUDCTL_WORKDIR}
+ARG TERRAFORM_VERSION=0.12.6
+ARG TERRAFORM_URI=terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+ARG TERRAFORM_URL=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_URI}
+ARG TERRAFORM_BIN_PATH=/opt/terraform
+ARG PIP_PACKAGES="ansible awscli lxml netaddr pypsexec pywinrm pywinrm[credssp]"
+ARG BUILD_DATE
 
-ENV root_user root
-ENV terraform_version 0.12.0
-ENV terraform terraform_${terraform_version}_linux_amd64.zip
-ENV terraform_bin_path /opt/terraform
-ENV pip_packages="ansible awscli pypsexec pywinrm pywinrm[credssp]"
-ENV docker_user ${CLOUD_BASTION_USER}
-ENV projects ${CLOUD_BASTION_WORKDIR}
+# Labels -- See https://github.com/opencontainers/image-spec/blob/master/annotations.md
+LABEL org.opencontainers.image.created=${BUILD_DATE}
+LABEL org.opencontainers.image.url="https://github.com/skipperTux/cloud-bastion"
+LABEL org.opencontainers.image.version="0.2.1"
+LABEL org.opencontainers.image.vendor="roeper.biz"
+LABEL org.opencontainers.image.licenses="BSD-3-Clause"
+LABEL org.opencontainers.image.title="cloud-bastion"
+LABEL org.opencontainers.image.description="Tooling for Terraform, Ansible, Kubernetes, AWS, Azure and Google Cloud in a CentOS 7 based Docker image."
 
-USER ${root_user}
+USER ${ROOT_USER}
 # Install systemd -- See https://hub.docker.com/_/centos
 RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == \
 systemd-tmpfiles-setup.service ] || rm -f $i; done); \
@@ -35,7 +49,10 @@ RUN yum makecache fast \
       curl \
       unzip \
       openssh-clients \
-      python-pip
+      python36
+
+# Install pip3
+RUN python3 -m ensurepip
 
 # Google Cloud SDK repo
 RUN echo -e '[google-cloud-sdk]\n\
@@ -65,10 +82,10 @@ RUN yum -y update
 
 # Install Terraform
 WORKDIR /tmp
-RUN curl -sSLO https://releases.hashicorp.com/terraform/${terraform_version}/$terraform \
-  && mkdir -p ${terraform_bin_path} \
-  && unzip $terraform -d ${terraform_bin_path} \
-  && echo 'PATH=$PATH:'${terraform_bin_path}'' > /etc/profile.d/terraform.sh
+RUN curl -sSLO ${TERRAFORM_URL} \
+  && mkdir -p ${TERRAFORM_BIN_PATH} \
+  && unzip ${TERRAFORM_URI} -d ${TERRAFORM_BIN_PATH} \
+  && echo 'PATH=$PATH:'${TERRAFORM_BIN_PATH}'' > /etc/profile.d/terraform.sh
 
 # Install Google Cloud SDK
 RUN yum -y install google-cloud-sdk
@@ -79,16 +96,20 @@ RUN yum -y install kubectl
 RUN yum -y install azure-cli
 
 # Add non-root user
-RUN useradd -m -s /bin/bash -U ${docker_user}
+RUN useradd -m -s /bin/bash -U ${DOCKER_USER}
 
-USER ${docker_user}
+USER ${DOCKER_USER}
 # Install pip packages (Ansible, AWS CLI)
-RUN pip install --upgrade --user ${pip_packages}
+RUN pip3 install --upgrade --user ${PIP_PACKAGES}
+
+# Add .ssh from host
+RUN mkdir -p ${HOST_SSH} \
+  && ln -s ${HOST_SSH} ${SSH}
 
 # Add mount volume
-RUN mkdir -p ${projects}
+RUN mkdir -p ${PROJECTS}
 
-USER ${root_user}
+USER ${ROOT_USER}
 # Clean yum cache
 RUN yum clean all
 
@@ -96,11 +117,11 @@ RUN yum clean all
 RUN sed -i -e 's/^\(Defaults\s*requiretty\)/#--- \1/' /etc/sudoers
 
 # Switch to non-root user, add .local/bin path and switch to workdir
-USER ${docker_user}
+USER ${DOCKER_USER}
 RUN echo -e '\n# User specific environment and startup programs\n\
 PATH=$PATH:$HOME/.local/bin:$HOME/bin'\
   >> ~/.bashrc
-WORKDIR ${projects}
+WORKDIR ${PROJECTS}
 
 VOLUME [ "/sys/fs/cgroup" ]
 CMD ["/usr/sbin/init"]
