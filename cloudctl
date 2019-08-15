@@ -58,9 +58,6 @@ while [[ $# -gt 0 ]]; do
         exec=true
         command="${key#*=}"
         ;;
-        # This is a flag type option. Will catch either -e or --exec
-        -e|--exec)
-        ;;
         *)
         # Do whatever you want with extra options
         echo "Unknown option '${key}'"
