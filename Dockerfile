@@ -119,7 +119,11 @@ RUN sed -i -e 's/^\(Defaults\s*requiretty\)/#--- \1/' /etc/sudoers
 # Switch to non-root user, add .local/bin path and switch to workdir
 USER ${DOCKER_USER}
 RUN echo -e '\n# User specific environment and startup programs\n\
-PATH=$PATH:$HOME/.local/bin:$HOME/bin'\
+PATH=$PATH:$HOME/.local/bin:$HOME/bin\n\
+export PROMPT_COMMAND="history -a ; ${PROMPT_COMMAND:-:}"\n\
+export HISTCONTROL=erasedups:ignorespace\n\
+export HISTSIZE=16000\n\
+export HISTIGNORE='"'"'&:clear:exit:history:ll:ls'"'"\
   >> ~/.bashrc
 WORKDIR ${PROJECTS}
 
