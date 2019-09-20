@@ -20,7 +20,7 @@ ARG BUILD_DATE
 # Labels -- See https://github.com/opencontainers/image-spec/blob/master/annotations.md
 LABEL org.opencontainers.image.created=${BUILD_DATE}
 LABEL org.opencontainers.image.url="https://github.com/skipperTux/cloud-bastion"
-LABEL org.opencontainers.image.version="0.2.1"
+LABEL org.opencontainers.image.version="0.2.2"
 LABEL org.opencontainers.image.vendor="roeper.biz"
 LABEL org.opencontainers.image.licenses="BSD-3-Clause"
 LABEL org.opencontainers.image.title="cloud-bastion"
