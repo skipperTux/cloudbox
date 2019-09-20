@@ -19,9 +19,12 @@ export CLOUDCTL_USER='bastion'
 export CLOUDCTL_SSH="/home/${CLOUDCTL_USER}/.ssh"
 export CLOUDCTL_HOST_SSH="/home/${CLOUDCTL_USER}/host_ssh"
 export CLOUDCTL_WORKDIR="/home/${CLOUDCTL_USER}/Projects"
+CLOUDCTL_BASH_HIST="/home/${CLOUDCTL_USER}/.bash_history"
 LOCAL_HOME="$(getent passwd ${SUDO_USER} | cut -d: -f6)"
 LOCAL_SSH="${LOCAL_HOME}/.ssh"
 LOCAL_WORKDIR="${LOCAL_HOME}/Projects"
+CLOUDCTL_LOCAL="${LOCAL_HOME}/.local/share/cloudctl"
+CLOUDCTL_LOCAL_BASH_HIST="${CLOUDCTL_LOCAL}/bash_history"
 
 CLOUDCTL_NAME='cloudctl'
 
@@ -77,9 +80,11 @@ fi
 # functions
 
 local_workdirs () {
-    # Create local working directories
+    # Create local working directories and files
     sudo -H -u ${SUDO_USER} mkdir -p ${LOCAL_WORKDIR}
     sudo -H -u ${SUDO_USER} mkdir -p ${LOCAL_SSH}
+    sudo -H -u ${SUDO_USER} mkdir -p ${CLOUDCTL_LOCAL}
+    sudo -H -u ${SUDO_USER} touch -a ${CLOUDCTL_LOCAL_BASH_HIST}
 }
 
 container_build () {
@@ -109,7 +114,8 @@ container_run () {
 
     args+=("--mount type=bind,source='/sys/fs/cgroup',target='/sys/fs/cgroup',readonly"
         "--mount type=bind,source=\"${LOCAL_SSH}\",target=\"${CLOUDCTL_HOST_SSH}\",readonly"
-        "--mount type=bind,source=\"${LOCAL_WORKDIR}\",target=\"${CLOUDCTL_WORKDIR}\"")
+        "--mount type=bind,source=\"${LOCAL_WORKDIR}\",target=\"${CLOUDCTL_WORKDIR}\""
+        "--mount type=bind,source=\"${CLOUDCTL_LOCAL_BASH_HIST}\",target=\"${CLOUDCTL_BASH_HIST}\"")
 
     if [ "${PWD:0:${#LOCAL_WORKDIR}}" = $LOCAL_WORKDIR ]; then
         subfolder=${PWD#${LOCAL_WORKDIR}/}
@@ -133,6 +139,7 @@ container_exec () {
 
     eval docker exec ${args[@]}
 }
+
 
 # main script
 if [ "${start:-}" != "false" ]; then
