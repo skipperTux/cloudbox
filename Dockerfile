@@ -10,7 +10,7 @@ ARG SSH=${CLOUDCTL_SSH}
 ARG HOST_SSH=${CLOUDCTL_HOST_SSH}
 ARG CLOUDCTL_WORKDIR=/home/${CLOUDCTL_USER}/Projects
 ARG PROJECTS=${CLOUDCTL_WORKDIR}
-ARG TERRAFORM_VERSION=0.12.9
+ARG TERRAFORM_VERSION=0.12.13
 ARG TERRAFORM_URI=terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 ARG TERRAFORM_URL=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_URI}
 ARG TERRAFORM_BIN_PATH=/opt/terraform
@@ -20,7 +20,7 @@ ARG BUILD_DATE
 # Labels -- See https://github.com/opencontainers/image-spec/blob/master/annotations.md
 LABEL org.opencontainers.image.created=${BUILD_DATE}
 LABEL org.opencontainers.image.url="https://github.com/skipperTux/cloud-bastion"
-LABEL org.opencontainers.image.version="0.2.2"
+LABEL org.opencontainers.image.version="0.2.3"
 LABEL org.opencontainers.image.vendor="roeper.biz"
 LABEL org.opencontainers.image.licenses="BSD-3-Clause"
 LABEL org.opencontainers.image.title="cloud-bastion"
