@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-if [ ${UID} -ne 0 ]; then
-    echo "use: sudo ${0##*/}"
-    exit -1
-fi
 
 set -o errexit
 set -o nounset
+set -o pipefail
 # set -o xtrace
 
 # Set magic variables for current file & dir
@@ -15,29 +12,15 @@ __base="$(basename ${__file} .sh)"
 __bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Set variables
-export CLOUDCTL_USER='bastion'
-export CLOUDCTL_SSH="/home/${CLOUDCTL_USER}/.ssh"
-export CLOUDCTL_HOST_SSH="/home/${CLOUDCTL_USER}/host_ssh"
-export CLOUDCTL_WORKDIR="/home/${CLOUDCTL_USER}/Projects"
-CLOUDCTL_BASH_HIST="/home/${CLOUDCTL_USER}/.bash_history"
-LOCAL_HOME="$(getent passwd ${SUDO_USER} | cut -d: -f6)"
-LOCAL_SSH="${LOCAL_HOME}/.ssh"
-LOCAL_WORKDIR="${LOCAL_HOME}/Projects"
-CLOUDCTL_LOCAL="${LOCAL_HOME}/.local/share/cloudctl"
-CLOUDCTL_LOCAL_BASH_HIST="${CLOUDCTL_LOCAL}/bash_history"
-
-CLOUDCTL_NAME='cloudctl'
-
 build=false
 force=false
 exec=false
 unset start
+container_alias='podman'
+docker_name='docker'
 
-# Start Docker service, if not running (systemd)
-if ! systemctl is-active --quiet docker; then
-    systemctl start --quiet docker
-fi
-
+# https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash/39398359#39398359
+# As long as there is at least one more argument, keep looping
 while [[ $# -gt 0 ]]; do
     key="$1"
     case "${key}" in
@@ -48,6 +31,10 @@ while [[ $# -gt 0 ]]; do
         # This is a flag type option. Will catch either -f or --force
         -f|--force)
         force=true
+        ;;
+        # This is a flag type option. Will catch either -d or --docker
+        -d|--docker)
+        container_alias="${docker_name}"
         ;;
         # This is an arg value type option. Will catch -e value or --exec value
         -e|--exec)
@@ -69,8 +56,38 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+# Set cloudbox environment
+export CLOUDBOX_USER='cloudbox'
+export CLOUDBOX_HOME="/home/${CLOUDBOX_USER}"
+export CLOUDBOX_SSH="${CLOUDBOX_HOME}/.ssh"
+export CLOUDBOX_HOST_SSH="${CLOUDBOX_HOME}/host_ssh"
+export CLOUDBOX_WORKDIR="${CLOUDBOX_HOME}/Projects"
+export CLOUDBOX_NAME='cloudbox'
+export CLOUDBOX_VERSION='0.2.3'
+
+VOLUME_NAME=${CLOUDBOX_USER}'_home'
+DOCKER_TAG='local'/${CLOUDBOX_NAME}:${CLOUDBOX_VERSION}
+
+# Set local environment
+if [ $UID -ne 0 ]; then
+    LOCAL_HOME=${HOME}
+else
+    LOCAL_HOME="$(getent passwd ${SUDO_USER} | cut -d: -f6)"
+fi
+LOCAL_SSH="${LOCAL_HOME}/.ssh"
+LOCAL_WORKDIR="${LOCAL_HOME}/Projects"
+
+# Script prerequisites
+if  [ "${container_alias}" = "${docker_name}" ]; then
+    user_in_docker=$(id --name --groups --zero "${USER:-${USERNAME:-${LOGNAME}}}" | grep -c --null-data --line-regexp --fixed-strings "${docker_name}" || [[ $? == 1 ]])
+    if [ ${UID} -ne 0 ] && ! [ "${user_in_docker}" = "1" ]; then
+        echo "use: sudo ${0##*/}"
+        exit -1
+    fi
+fi
+
 if [ "${exec:-}" = "true" ]; then
-    if docker exec ${CLOUDCTL_NAME} true 2>/dev/null; then
+    if ${container_alias} start ${CLOUDBOX_NAME} 2>/dev/null; then
         start=false
     else
         start=true
@@ -81,63 +98,70 @@ fi
 
 local_workdirs () {
     # Create local working directories and files
-    sudo -H -u ${SUDO_USER} mkdir -p ${LOCAL_WORKDIR}
-    sudo -H -u ${SUDO_USER} mkdir -p ${LOCAL_SSH}
-    sudo -H -u ${SUDO_USER} mkdir -p ${CLOUDCTL_LOCAL}
-    sudo -H -u ${SUDO_USER} touch -a ${CLOUDCTL_LOCAL_BASH_HIST}
+    if  [ "${container_alias}" = "${docker_name}" ]; then
+        sudo -H -u ${SUDO_USER} mkdir -p ${LOCAL_WORKDIR}
+        sudo -H -u ${SUDO_USER} mkdir -p ${LOCAL_SSH}
+    else
+        mkdir -p ${LOCAL_WORKDIR}
+        mkdir -p ${LOCAL_SSH}
+    fi
 }
 
 container_build () {
-    # Build cloud-bastion image
+    # Build cloudbox image
     local args
     pushd ${__dir}
     args=('--rm=true'
-        "--build-arg=\"CLOUDCTL_USER=${CLOUDCTL_USER}\""
-        "--build-arg=\"CLOUDCTL_SSH=${CLOUDCTL_SSH}\""
-        "--build-arg=\"CLOUDCTL_HOST_SSH=${CLOUDCTL_HOST_SSH}\""
-        "--build-arg=\"CLOUDCTL_WORKDIR=${CLOUDCTL_WORKDIR}\""
+        "--build-arg=\"CLOUDBOX_USER=${CLOUDBOX_USER}\""
+        "--build-arg=\"CLOUDBOX_SSH=${CLOUDBOX_SSH}\""
+        "--build-arg=\"CLOUDBOX_HOST_SSH=${CLOUDBOX_HOST_SSH}\""
+        "--build-arg=\"CLOUDBOX_WORKDIR=${CLOUDBOX_WORKDIR}\""
+        "--build-arg=\"CLOUDBOX_NAME=${CLOUDBOX_NAME}\""
+        "--build-arg=\"CLOUDBOX_VERSION=${CLOUDBOX_VERSION}\""
         "--build-arg=\"BUILD_DATE=$(date --utc +\"%FT%TZ\")\"")
     [ "${force:-}" = "true" ] && args+=('--no-cache')
-    args+=("--tag='local/cloud-bastion'" '.')
-    eval docker build ${args[@]}
+    args+=("--tag='"${DOCKER_TAG}"'" '.')
+    eval ${container_alias} build ${args[@]}
     popd
 }
 
 container_run () {
-    # Run cloud-bastion container
+    # Run cloudbox container
     local args
     if [ "${exec:-}" = "true" ]; then
         args=('--detach')
     else
-        args=('--interactive' '--tty')
+        args=('--interactive' '--tty' '--rm=true')
     fi
 
-    args+=("--mount type=bind,source='/sys/fs/cgroup',target='/sys/fs/cgroup',readonly"
-        "--mount type=bind,source=\"${LOCAL_SSH}\",target=\"${CLOUDCTL_HOST_SSH}\",readonly"
-        "--mount type=bind,source=\"${LOCAL_WORKDIR}\",target=\"${CLOUDCTL_WORKDIR}\""
-        "--mount type=bind,source=\"${CLOUDCTL_LOCAL_BASH_HIST}\",target=\"${CLOUDCTL_BASH_HIST}\"")
+    args+=("--mount type=bind,source=\"${LOCAL_SSH}\",target=\"${CLOUDBOX_HOST_SSH}\",relabel=shared,ro=true"
+        "--mount type=bind,source=\"${LOCAL_WORKDIR}\",target=\"${CLOUDBOX_WORKDIR}\",relabel=shared"
+        "--mount type=volume,source=\"${VOLUME_NAME}\",target=\"${CLOUDBOX_HOME}\"")
+    args+=('--userns=keep-id')
 
-    if [ "${PWD:0:${#LOCAL_WORKDIR}}" = $LOCAL_WORKDIR ]; then
+    if [ "${PWD:0:${#LOCAL_WORKDIR}}" = "${LOCAL_WORKDIR}" ]; then
         subfolder=${PWD#${LOCAL_WORKDIR}/}
-        args+=("--workdir \"${CLOUDCTL_WORKDIR}/${subfolder}\"")
+        if [ "${subfolder}" != "${LOCAL_WORKDIR}" ]; then
+          args+=("--workdir \"${CLOUDBOX_WORKDIR}/${subfolder}\"")
+        fi
     fi
 
     if [ "${exec:-}" = "true" ]; then
-        args+=("--name ${CLOUDCTL_NAME}")
-        args+=('local/cloud-bastion' 'tail -f /dev/null')
+        args+=("--name ${CLOUDBOX_NAME}")
+        args+=("${DOCKER_TAG}" 'tail -f /dev/null')
     else
-        args+=('local/cloud-bastion' '/bin/bash')
+        args+=("${DOCKER_TAG}" '/bin/bash')
     fi
 
-    eval docker run ${args[@]}
+    eval ${container_alias} run ${args[@]}
 }
 
 container_exec () {
     local args
     args=('--interactive' '--tty')
-    args+=("${CLOUDCTL_NAME}" "${command}")
+    args+=("${CLOUDBOX_NAME}" "${command}")
 
-    eval docker exec ${args[@]}
+    eval ${container_alias} exec ${args[@]}
 }
 
 
