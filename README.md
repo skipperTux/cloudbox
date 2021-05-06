@@ -11,10 +11,20 @@ Usage: cloudctl [OPTION]...
 
 -b, --build                     Build image from Dockerfile
 -f, --force                     Do not use cache when building the image. Only useful with build option.
+-d, --docker                    Use Docker CLI instead of Podman
 -e COMMAND, --exec COMMAND,
 -e=COMMAND, --exec=COMMAND      Run COMMAND in runnning container 'cloudctl'
 no option                       Create container 'cloudctl' and start a Bash session
+-h, --help                      print help
 ```
+
+Use
+
+```bash
+export CONTAINER_ALIAS='{ docker | podman }'
+```
+
+to set the Container Engine CLI for the current terminal session.
 
 ### Build image
 
@@ -90,7 +100,7 @@ If you want to use different ssh keys coming with your project, delete the link 
 [bastion]$ ansible --version
 ```
 
-Ansible is using Python 3 and has the following modules installed: lxml, netaddr, pypsexec, pywinrm, pywinrm[credssp].
+Ansible is using Python 3 and has the following modules installed: dnspython, lxml, netaddr, pypsexec, pywinrm and pywinrm[credssp].
 
 ### <a name="kubernetes"></a> [Kubernetes](https://kubernetes.io/docs/home/)
 

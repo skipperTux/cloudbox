@@ -16,6 +16,7 @@ readonly SUCCESS=0
 readonly E_NOT_ENOUGH_PRIVILEGES=113
 
 # Constant variables
+readonly DQT='"'
 readonly PODMAN_CLI='podman'
 readonly DOCKER_CLI='docker'
 
@@ -23,6 +24,7 @@ readonly DOCKER_CLI='docker'
 build=false
 force=false
 exec=false
+help=false
 unset start
 is_sudo=false
 CONTAINER_ALIAS=${CONTAINER_ALIAS:-${PODMAN_CLI}}
@@ -43,6 +45,10 @@ while [[ $# -gt 0 ]]; do
         # This is a flag type option. Will catch either -d or --docker
         -d|--docker)
         CONTAINER_ALIAS="${DOCKER_CLI}"
+        ;;
+        # This is a flag type option. Will catch either -h or --help
+        -h|--help)
+        help=true
         ;;
         # This is an arg value type option. Will catch -e value or --exec value
         -e|--exec)
@@ -77,6 +83,24 @@ VOLUME_NAME=${CLOUDBOX_USER}'_home'
 DOCKER_TAG='local'/${CLOUDBOX_NAME}:${CLOUDBOX_VERSION}
 
 # Functions
+
+show_help() {
+    # display help
+    echo "Usage: cloudctl [OPTION]..."
+    echo "Tooling for Terraform, Ansible, Kubernetes, AWS, Azure and Google Cloud in one container image."
+    echo
+    echo "OPTION"
+    echo "-b, --build                     Build image from Dockerfile"
+    echo "-f, --force                     Do not use cache when building the image. Only useful with build option."
+    echo "-d, --docker                    Use Docker CLI instead of Podman"
+    echo "-e COMMAND, --exec COMMAND,"
+    echo "-e=COMMAND, --exec=COMMAND      Run COMMAND in runnning container 'cloudctl'"
+    echo "no option                       Create container 'cloudctl' and start a Bash session"
+    echo "-h, --help                      print this help"
+    echo
+    echo "Use ${DQT}export CONTAINER_ALIAS='{ docker | podman }'${DQT} to set Container Engine CLI for current terminal session."
+    echo
+}
 
 local_workdirs () {
     # Create local working directories and files
@@ -193,6 +217,11 @@ if [ "${exec:-}" = "true" ]; then
 fi
 
 # Script main
+
+if [ "${help:-}" = "true" ]; then
+    show_help
+    exit ${SUCCESS}
+fi
 
 if [ "${start:-}" != "false" ]; then
     local_workdirs
