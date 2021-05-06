@@ -16,7 +16,7 @@ ARG TERRAFORM_VERSION=0.15.2
 ARG TERRAFORM_URI=terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 ARG TERRAFORM_URL=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_URI}
 ARG TERRAFORM_BIN_PATH=/usr/local/bin
-ARG PIP_PACKAGES="ansible==2.10 awscli dnspython lxml netaddr pypsexec pywinrm pywinrm[credssp]"
+ARG PIP_PACKAGES="ansible awscli dnspython lxml netaddr pypsexec pywinrm pywinrm[credssp]"
 ARG BUILD_DATE
 
 # Labels -- See https://github.com/opencontainers/image-spec/blob/master/annotations.md
