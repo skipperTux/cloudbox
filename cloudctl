@@ -111,7 +111,9 @@ container_build () {
     # Build cloudbox image
     local args
     pushd ${__dir}
-    args=('--rm=true'
+    args=('--layers'
+        '--force-rm=true'
+        '--rm=true'
         "--build-arg=\"CLOUDBOX_USER=${CLOUDBOX_USER}\""
         "--build-arg=\"CLOUDBOX_SSH=${CLOUDBOX_SSH}\""
         "--build-arg=\"CLOUDBOX_HOST_SSH=${CLOUDBOX_HOST_SSH}\""
@@ -133,6 +135,9 @@ container_run () {
     else
         args=('--interactive' '--tty' '--rm=true')
     fi
+
+    local suffix=`cat /dev/urandom | tr -cd 'a-f0-9' | head -c 3`
+    args+=("--hostname ${container_alias}-${suffix}")
 
     args+=("--mount type=bind,source=\"${LOCAL_SSH}\",target=\"${CLOUDBOX_HOST_SSH}\",relabel=shared,ro=true"
         "--mount type=bind,source=\"${LOCAL_WORKDIR}\",target=\"${CLOUDBOX_WORKDIR}\",relabel=shared"
