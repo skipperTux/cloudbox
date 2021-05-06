@@ -1,6 +1,6 @@
-# cloud-bastion
+# cloudbox
 
-Tooling for Terraform, Ansible, Kubernetes, AWS, Azure and Google Cloud in a [CentOS 7](https://hub.docker.com/_/centos) based Docker image.
+Tooling for Terraform, Ansible, Kubernetes, AWS, Azure and Google Cloud in a [Fedora](https://hub.docker.com/_/fedora) based Docker/Podman image. The image can be used with the [Visual Studio Code Remote - Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension and supports various in-container extensions like [Azure Tools for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-node-azure-pack) [Visual Studio Code Kubernetes Tools](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools), [Terraform Visual Studio Code Extension](https://marketplace.visualstudio.com/items?itemName=HashiCorp.terraform) etc. When [Visual Studio Code supports *Fedora Toolbox*](https://github.com/microsoft/vscode-remote-release/issues/3345) this image might be replaced with a Toolbox setup with all Cloud-tools installed via Ansible.
 
 ## cloudctl
 
@@ -61,13 +61,13 @@ A better option is to use a rootless container tool like [Podman](https://github
 
 ### Project directory
 
-The host user's `${HOME}/Projects` directory is mounted into `/home/${CLOUDCTL_USER}/Projects` in the container.
+The host user's `${HOME}/Projects` directory is mounted into `/home/${CLOUDBOX_USER}/Projects` in the container.
 
 If your current/working directory `${PWD}` in your IDE or Terminal on the host machine is within that Projects folder, `cloudctl` changes into that directory on start.
 
 ### SSH keys
 
-The host user's `${HOME}/.ssh` directory is mounted into `/home/${CLOUDCTL_USER}/host_ssh` in the container, and a symbolic link is created to the cloud-bastion user's `.ssh` directory.
+The host user's `${HOME}/.ssh` directory is mounted into `/home/${CLOUDBOX_USER}/host_ssh` in the container, and a symbolic link is created to the cloudbox user's `.ssh` directory.
 
 If you want to use different ssh keys coming with your project, delete the link and create a new link to a ssh directory in your project:
 
